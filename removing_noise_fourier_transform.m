@@ -16,10 +16,7 @@ img_fft = fft2(img);
 
 % Obtendo a fase da transformada.
 fase = arg(img_fft);
-
-% Fazendo o deslocamento da transformada discreta de Fourier e obtendo a magnitude.
-fft_shift = fftshift(img_fft);
-magnitude = abs(fft_shift);
+magnitude = abs(img_fft);
 
 % Exibicao 2D.
 ##figure, plot(magnitude);
@@ -28,32 +25,52 @@ magnitude = abs(fft_shift);
 figure, surf(magnitude);
 
 % Aplicando o filtro na magnitude.
-upper_limit = 155;
-inferior_limit = 105;
+limit = 105;
 
-for m = 1:256
-  for n = 1:256
-    if ((m < inferior_limit || m > upper_limit) || (n < inferior_limit || n > upper_limit))
-      filtered(m, n) = 0;
+for u = 1:256
+  for v = 1:256
+    c = sqrt(u^2 + v^2);
+
+    if (c > limit)
+      filtered(u, v) = 0;
     else
-      filtered(m, n) = magnitude(m, n);
+      filtered(u, v) = magnitude(u, v);
     end
   end
 end
 
+matrix_final = filtered;
+
+% Espelhando 2 quadrante
+for u = 1:256
+  for v = 1:256
+    if (filtered(u, v) == 0)
+      matrix_final(u, v) = filtered(u, 1 + columns(filtered) - v);
+    end
+  end
+end
+
+% Espelhando 3 e 4 quadrante
+for u = 1:256
+  for v = 1:256
+    if (matrix_final(u, v) == 0)
+      matrix_final(u, v) = matrix_final(1 + columns(filtered) - u, v);
+    end
+  end
+end
+
+figure, imshow(log(matrix_final), [])
+
 % Exibicao 2D.
-##figure, plot(filtered);
+figure, plot(filtered);
 
 % Exibicao 3D.
 figure, surf(filtered);
 
-% Desfazendo o deslocamento.
-without_fftshift = ifftshift(filtered);
-
 % Juntando a magnitude com a fase, na forma retangular.
 for m = 1:256
   for n = 1:256
-    rectangular_form(m, n) = without_fftshift(m,n)*cos(fase(m,n)) + without_fftshift(m,n)*sin(fase(m,n))*i;
+    rectangular_form(m, n) = matrix_final(m,n)*cos(fase(m,n)) + matrix_final(m,n)*sin(fase(m,n))*i;
   end
 end
 
@@ -61,28 +78,35 @@ inverse_fft = ifft2(rectangular_form);
 
 % Exibindo as imagens com e sem ruido no dominio da frequencia.
 figure;
-subplot(1, 2, 1);
-imshow(magnitude, []);
-title('Imagem com ru¨ªdo - Dom¨ªnio da frequ¨ºncia');
+subplot(2, 2, 1);
+imshow(log(magnitude), []);
+title('Imagem com ruido- Dominio da frequencia');
 
-subplot(1, 2, 2);
-imshow(filtered, []);
+subplot(2, 2, 2);
+imshow(fftshift(matrix_final), []);
+title('Imagem com ruido- Dominio da frequencia');
 
-% Exibindo as imagens com e sem ru¨ªdo juntas.
+subplot(2, 2, 3);
+imshow(log(fftshift(magnitude)), []);
+
+subplot(2, 2, 4);
+imshow(log(fftshift(matrix_final)), []);
+
+% Exibindo as imagens com e sem ruido juntas.
 figure;
 subplot(1, 2, 1);
 imshow(img);
-title('Imagem com ru¨ªdo - Dom¨ªnio da frequ¨ºncia');
+title('Imagem com ruiddo Dominio da frequencia');
 
 subplot(1, 2, 2);
 imshow(inverse_fft, []);
-title('Imagem com o ru¨ªdo filtrado');
+title('Imagem com o ruido filtrado');
 
-% Exibindo as imagens com e sem ru¨ªdo separadas.
+% Exibindo as imagens com e sem ruido separadas.
 ##figure, imshow(img);
-##title('Imagem com ru¨ªdo');
+##title('Imagem com ruido);
 ##
 ##figure, imshow(inverse_fft, []);
-##title('Imagem com o ru¨ªdo filtrado');
+##title('Imagem com o ruido filtrado');
 
 cd('..');
